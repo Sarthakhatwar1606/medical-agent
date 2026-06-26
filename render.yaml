@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: medical-agent
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: AZURE_AI_FOUNDRY_ENDPOINT
+        sync: false
+      - key: AZURE_AI_FOUNDRY_API_KEY
+        sync: false
+      - key: CLAUDE_MODEL
+        sync: false
+      - key: AZURE_SEARCH_ENDPOINT
+        sync: false
+      - key: AZURE_SEARCH_KEY
+        sync: false
+      - key: AZURE_SEARCH_INDEX
+        sync: false
+      - key: AZURE_STORAGE_CONNECTION_STRING
+        sync: false
+      - key: AZURE_STORAGE_CONTAINER
+        sync: false
