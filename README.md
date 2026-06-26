@@ -14,6 +14,7 @@ An AI-powered medical information assistant built with Claude on Azure AI Foundr
 - 💊 **Drug Information** — Real-time FDA drug data via OpenFDA API
 - 📋 **Treatment Guidelines** — Evidence-based protocols for common conditions stored in Azure Blob Storage
 - 💬 **Conversational AI** — Multi-turn chat with session memory powered by Claude
+- 📝 **Query Logging** — Unanswered questions are automatically logged to Azure Table Storage for knowledge base improvement
 - 🚨 **Safety First** — Built-in emergency detection and medical disclaimers
 
 ## Tech Stack
@@ -24,6 +25,7 @@ An AI-powered medical information assistant built with Claude on Azure AI Foundr
 | Backend | FastAPI (Python) |
 | Knowledge Base | Azure AI Search |
 | Document Storage | Azure Blob Storage |
+| Query Logging | Azure Table Storage |
 | Drug Data | OpenFDA API (free, no key needed) |
 | Frontend | Vanilla HTML/CSS/JS |
 | Hosting | Render (free tier) |
