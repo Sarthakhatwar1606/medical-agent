@@ -1,6 +1,7 @@
 anthropic>=0.92.0
 azure-search-documents>=11.4.0
 azure-storage-blob>=12.19.0
+azure-data-tables>=12.4.0
 azure-identity>=1.15.0
 fastapi>=0.110.0
 uvicorn[standard]>=0.27.0

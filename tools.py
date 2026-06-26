@@ -6,11 +6,14 @@ and the tool runner can call them automatically.
 
 import json
 import logging
+import uuid
 import httpx
+from datetime import datetime, timezone
 from anthropic import beta_tool
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 from azure.storage.blob import BlobServiceClient
+from azure.data.tables import TableServiceClient
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -18,6 +21,37 @@ logger = logging.getLogger(__name__)
 # Lazy-init Azure clients so missing env vars surface clearly at first use
 _search_client: SearchClient | None = None
 _blob_service: BlobServiceClient | None = None
+_table_service: TableServiceClient | None = None
+UNANSWERED_TABLE = "unansweredqueries"
+
+
+def _get_table_service() -> TableServiceClient | None:
+    global _table_service
+    if _table_service is None:
+        try:
+            _table_service = TableServiceClient.from_connection_string(config.STORAGE_CONN_STR)
+            _table_service.create_table_if_not_exists(UNANSWERED_TABLE)
+        except Exception as exc:
+            logger.warning("Table Storage not available: %s", exc)
+            return None
+    return _table_service
+
+
+def _log_unanswered_query(query: str) -> None:
+    service = _get_table_service()
+    if service is None:
+        return
+    try:
+        table = service.get_table_client(UNANSWERED_TABLE)
+        table.upsert_entity({
+            "PartitionKey": "unanswered",
+            "RowKey": str(uuid.uuid4()),
+            "query": query,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+        logger.info("Logged unanswered query: %s", query)
+    except Exception as exc:
+        logger.warning("Failed to log unanswered query: %s", exc)
 
 
 def _get_search_client() -> SearchClient:
@@ -70,6 +104,7 @@ def search_medical_knowledge(query: str, top_k: int = 5) -> str:
             for r in results
         ]
         if not docs:
+            _log_unanswered_query(query)
             return json.dumps({"found": False, "message": "No results found for this query."})
         return json.dumps({"found": True, "count": len(docs), "results": docs}, indent=2)
     except Exception as exc:
