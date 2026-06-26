@@ -271,6 +271,34 @@
 
     #send svg { width: 18px; height: 18px; fill: white; }
 
+    #mic {
+      width: 44px;
+      height: 44px;
+      background: white;
+      border: 1.5px solid #d1d5db;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    #mic:hover { border-color: #1a73e8; background: #e8f0fe; }
+    #mic.listening {
+      background: #fee2e2;
+      border-color: #ef4444;
+      animation: micPulse 1s infinite;
+    }
+
+    @keyframes micPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+    }
+
+    #mic svg { width: 18px; height: 18px; }
+
     .footer-note {
       text-align: center;
       font-size: 11px;
@@ -306,7 +334,15 @@
 </div>
 
 <div class="input-area">
-  <textarea id="input" rows="1" placeholder="Ask a medical question..." oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+  <button id="mic" onclick="toggleVoice()" title="Voice input">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" y1="19" x2="12" y2="23"/>
+      <line x1="8" y1="23" x2="16" y2="23"/>
+    </svg>
+  </button>
+  <textarea id="input" rows="1" placeholder="Ask a medical question or click 🎤 to speak..." oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
   <button id="send" onclick="sendMessage()" title="Send">
     <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
   </button>
@@ -429,6 +465,61 @@
     isLoading = false;
     document.getElementById('send').disabled = false;
     document.getElementById('input').focus();
+  }
+
+  // Voice input
+  let recognition = null;
+  let isListening = false;
+
+  function toggleVoice() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    const mic = document.getElementById('mic');
+    const input = document.getElementById('input');
+
+    recognition.onstart = () => {
+      isListening = true;
+      mic.classList.add('listening');
+      input.placeholder = '🎤 Listening...';
+    };
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results)
+        .map(r => r[0].transcript)
+        .join('');
+      input.value = transcript;
+      autoResize(input);
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      mic.classList.remove('listening');
+      input.placeholder = 'Ask a medical question or click 🎤 to speak...';
+      if (input.value.trim()) sendMessage();
+    };
+
+    recognition.onerror = (e) => {
+      isListening = false;
+      mic.classList.remove('listening');
+      input.placeholder = 'Ask a medical question or click 🎤 to speak...';
+      if (e.error !== 'no-speech') alert('Voice error: ' + e.error);
+    };
+
+    recognition.start();
   }
 </script>
 </body>
